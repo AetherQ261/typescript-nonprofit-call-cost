@@ -1,0 +1,15 @@
+{
+  "name": "typescript-nonprofit-call-cost",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "example": "tsx src/receipt_cost_example.ts",
+    "test": "tsx --test src/cost_decision.test.ts"
+  },
+  "dependencies": {
+    "openai": "^4.0.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.0.0"
+  }
+}
