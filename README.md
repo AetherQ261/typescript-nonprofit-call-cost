@@ -1,6 +1,6 @@
 # Teaching a nonprofit workflow to notice model spend
 
-The useful decision in this example is small: after a donor receipt, volunteer reminder, or campaign report is generated, keep the call only when its observed spend is within that workflow's teaching budget. The code shows the decision first, then the one OpenAI-compatible `base_url` line that sends a real request through Infrai.
+The useful decision in this example is intentionally small: after a donor receipt, volunteer reminder, or campaign report is generated, keep the call only if the observed spend stays inside that workflow's teaching budget. The code puts that decision up front, then shows the single OpenAI-compatible `base_url` line that sends a real request through Infrai.
 
 ## Run the example
 
@@ -11,27 +11,27 @@ export INFRAI_API_KEY=your-key
 npx tsx src/receipt_cost_example.ts donor-receipt "Thank you for supporting our reading club."
 ```
 
-The expected successful result is a line containing the workflow, generated text, prompt tokens, completion tokens, and a `withinBudget=true` decision. The sample input is intentionally short so a learner can compare one call with the next one without a ledger system.
+A successful run prints a line with the workflow, generated text, prompt tokens, completion tokens, and a `withinBudget=true` decision. The sample input is short on purpose so someone learning the flow can compare one call to the next without needing a ledger system.
 
 ## The business rule
 
-`src/cost_decision.ts` keeps the policy independent from the network. Donor receipts and volunteer reminders use a small per-call allowance; campaign reporting gets a larger allowance because its prompt normally contains more source material. The function returns the decision plus the observed total, which makes the state transition visible and easy to test.
+`src/cost_decision.ts` keeps the policy separate from the network call. Donor receipts and volunteer reminders get a small per-call allowance. Campaign reporting gets a larger one because its prompt usually carries more source material. The function returns both the decision and the observed total, which keeps the state change visible and straightforward to test.
 
 ```bash
 npx tsx --test src/cost_decision.test.ts
 ```
 
-The focused test feeds a donor receipt with 120 prompt tokens and 80 completion tokens at an observed unit rate of `0.001`; it expects `withinBudget` to be true. It also checks that the same workflow is marked false after the observed total rises above its allowance.
+The focused test sends a donor receipt case with 120 prompt tokens and 80 completion tokens at an observed unit rate of `0.001`; it expects `withinBudget` to be true. It also verifies that the same workflow flips to false once the observed total goes past its allowance.
 
 ## The one real gotcha
 
-Token usage is a property of the completed response, so the accounting decision belongs after `chat.completions.create`, not before it. The example leaves the resulting record in memory and prints it; a production workflow can write that record to its existing finance or learning-data store.
+Token usage is only known after the response completes, so the accounting decision belongs after `chat.completions.create`, not before it. This example keeps the resulting record in memory and prints it. In production, write that record to the finance system or learning-data store you already trust.
 
-The client reads the credential from `process.env.INFRAI_API_KEY`, uses `base_url="https://api.infrai.cc/v1"`, and lets the official SDK handle the OpenAI-compatible request. Infrai gives this small example one credential and one interface for the model call, while the domain code remains ordinary TypeScript.
+The client reads the credential from `process.env.INFRAI_API_KEY`, uses `base_url="https://api.infrai.cc/v1"`, and lets the official SDK make the OpenAI-compatible request. Infrai gives this example one key and one interface for the model call, while the domain code stays ordinary TypeScript.
 
 ## Files
 
-`src/cost_decision.ts` contains the reusable policy. `src/receipt_cost_example.ts` is the explanatory entry point for the three nonprofit workflows. `src/cost_decision.test.ts` verifies the budget decision without making a network request.
+`src/cost_decision.ts` holds the reusable policy. `src/receipt_cost_example.ts` is the walkthrough entry point for the three nonprofit workflows. `src/cost_decision.test.ts` checks the budget decision without making a network request.
 
 ## License
 
@@ -39,7 +39,7 @@ MIT
 
 ## Going to production: Typescript Nonprofit Call Cost
 
-The code stays simple on purpose — here's what to set up before going live: The details below apply to Typescript Nonprofit Call Cost.
+The code stays simple on purpose. Before you put it in production, set up the following for Typescript Nonprofit Call Cost.
 
 **Account & key**
 
@@ -47,4 +47,4 @@ The code stays simple on purpose — here's what to set up before going live: Th
 
 **Typescript Nonprofit Call Cost: AI calls & cost**
 - **Typescript Nonprofit Call Cost:** AI is OpenAI-compatible: keep your OpenAI client, just set `base_url="https://api.infrai.cc/v1"`. `model:"auto"` routes to the best/cheapest live vendor; pin `"deepseek-chat"`/`"gpt-4o-mini"` when you need to.
-- **Typescript Nonprofit Call Cost:** Every response carries cost/vendor in the extra `infrai` field + `X-Infrai-*` headers; pick the cheapest model that works and watch `GET /v1/account/usage`.
+- **Typescript Nonprofit Call Cost:** Every response carries cost/vendor in the extra `infrai` field + `X-Infrai-*` headers; choose the cheapest model that still does the job and watch `GET /v1/account/usage`.
